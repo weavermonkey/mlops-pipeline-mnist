@@ -69,12 +69,12 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     
     return 100 * correct / total
 
+# Moved seed_worker function outside
+def seed_worker(worker_id):
+    np.random.seed(42)
+    torch.manual_seed(42)
+
 def load_data():
-    # Set worker seed function
-    def seed_worker(worker_id):
-        np.random.seed(42)
-        torch.manual_seed(42)
-    
     # Create generator for reproducibility
     g = torch.Generator()
     g.manual_seed(42)
@@ -88,9 +88,10 @@ def load_data():
         train_dataset, 
         batch_size=32, 
         shuffle=True, 
-        num_workers=1,  # Fixed number of workers
+        num_workers=1,
         worker_init_fn=seed_worker,
-        generator=g
+        generator=g,
+        drop_last=True
     )
     
     return train_loader
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     
     train_loader = load_data()
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.003)
+    optimizer = optim.Adam(model.parameters(), lr=0.004)
     
     accuracy = train_epoch(model, train_loader, criterion, optimizer, device)
     print(f"\nFirst epoch accuracy: {accuracy}%")
