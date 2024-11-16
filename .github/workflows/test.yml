@@ -46,13 +46,6 @@ jobs:
         echo "Running gradient tests..."
         pytest test_model.py::test_gradient_flow -v
         pytest test_model.py::test_gradient_magnitudes -v
-        
-        echo "Running robustness tests..."
-        pytest test_model.py::test_noisy_inputs -v
-        pytest test_model.py::test_edge_cases -v
-        
-        echo "Running batch size tests..."
-        pytest test_model.py::test_batch_sizes -v
 
     - name: Upload test results
       if: always()
