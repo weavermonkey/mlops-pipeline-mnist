@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-import pytest
+import numpy as np
 
 class LightweightCNN(nn.Module):
     def __init__(self):
@@ -70,24 +70,45 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     return 100 * correct / total
 
 def load_data():
+    # Set worker seed function
+    def seed_worker(worker_id):
+        np.random.seed(42)
+        torch.manual_seed(42)
+    
+    # Create generator for reproducibility
+    g = torch.Generator()
+    g.manual_seed(42)
+    
     transform = transforms.Compose([
-        transforms.ToTensor(),  # Just convert to tensor, scaling pixels from 0-255 to 0-1
+        transforms.ToTensor(),
     ])
     
     train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=32, 
+        shuffle=True, 
+        num_workers=1,  # Fixed number of workers
+        worker_init_fn=seed_worker,
+        generator=g
+    )
     
     return train_loader
 
 if __name__ == "__main__":
+    # Set global seeds
+    torch.manual_seed(42)
+    np.random.seed(42)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.set_num_threads(1)
+    
     device = torch.device("cpu")
     model = LightweightCNN().to(device)
     
-    # Print parameter count first
     param_count = count_parameters(model)
     print(f"Total parameters: {param_count}")
     
-    # Print detailed parameter breakdown
     print("\nParameter breakdown:")
     for name, param in model.named_parameters():
         if param.requires_grad:
@@ -95,8 +116,7 @@ if __name__ == "__main__":
     
     train_loader = load_data()
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.003, betas=(0.9, 0.999))
+    optimizer = optim.Adam(model.parameters(), lr=0.003)
     
-    torch.manual_seed(42)
     accuracy = train_epoch(model, train_loader, criterion, optimizer, device)
     print(f"\nFirst epoch accuracy: {accuracy}%")
