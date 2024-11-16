@@ -46,6 +46,9 @@ jobs:
         echo "Running gradient tests..."
         pytest test_model.py::test_gradient_flow -v
         pytest test_model.py::test_gradient_magnitudes -v
+        
+        echo "Running noise robustness test..."
+        pytest test_model.py::test_noisy_inputs -v
 
     - name: Upload test results
       if: always()

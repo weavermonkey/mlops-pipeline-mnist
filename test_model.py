@@ -88,5 +88,49 @@ def test_gradient_magnitudes():
         assert grad_norm > min_threshold, f"Vanishing gradient in {name}: {grad_norm}"
         print(f"Gradient magnitude check passed for {name}: {grad_norm:.6f}")
 
+def test_noisy_inputs():
+    """Test model's robustness to input noise"""
+    device = torch.device("cpu")
+    model = LightweightCNN().to(device)
+    model.eval()  # Set to evaluation mode
+    
+    # First train the model briefly to have meaningful predictions
+    train_loader = load_data()
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
+    torch.manual_seed(42)
+    
+    # Train for one epoch to get a decent model
+    train_epoch(model, train_loader, criterion, optimizer, device)
+    
+    # Get a batch for testing
+    images, labels = next(iter(train_loader))
+    images, labels = images.to(device), labels.to(device)
+    
+    # Get predictions on clean images
+    with torch.no_grad():
+        clean_output = model(images)
+        clean_pred = torch.argmax(clean_output, dim=1)
+    
+        # Test different noise levels
+        noise_levels = [0.1, 0.2, 0.3]  # Standard deviations for Gaussian noise
+        min_accuracies = [0.8, 0.7, 0.6]  # Expected minimum accuracy for each noise level
+        
+        torch.manual_seed(42)  # For reproducible noise
+        for noise_level, min_accuracy in zip(noise_levels, min_accuracies):
+            # Add Gaussian noise
+            noise = torch.randn_like(images) * noise_level
+            noisy_images = images + noise
+            noisy_images = torch.clamp(noisy_images, 0, 1)  # Ensure valid pixel values
+            
+            # Get predictions on noisy images
+            noisy_output = model(noisy_images)
+            noisy_pred = torch.argmax(noisy_output, dim=1)
+            
+            # Calculate accuracy
+            accuracy = (noisy_pred == labels).float().mean().item()
+            assert accuracy >= min_accuracy, f"Model performs poorly with noise level {noise_level}: {accuracy:.2f} accuracy"
+            print(f"Noise robustness test passed for noise level {noise_level}: {accuracy:.2f} accuracy")
+
 if __name__ == "__main__":
     pytest.main([__file__])
