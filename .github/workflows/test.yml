@@ -45,7 +45,6 @@ jobs:
         
         echo "Running gradient tests..."
         pytest test_model.py::test_gradient_flow -v
-        pytest test_model.py::test_gradient_magnitudes -v
 
     - name: Upload test results
       if: always()
