@@ -44,5 +44,49 @@ def test_gradient_flow():
         assert torch.any(param.grad != 0), f"Gradient for {name} is all zeros"
         print(f"Gradient check passed for {name}")
 
+def test_gradient_magnitudes():
+    """Test for exploding or vanishing gradients"""
+    device = torch.device("cpu")
+    model = LightweightCNN().to(device)
+    model.train()
+    
+    train_loader = load_data()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
+    
+    # Get first batch
+    images, labels = next(iter(train_loader))
+    images, labels = images.to(device), labels.to(device)
+    
+    # Forward and backward pass
+    optimizer.zero_grad()
+    output = model(images)
+    loss = F.cross_entropy(output, labels)
+    loss.backward()
+    
+    # Check gradient magnitudes with different thresholds for weights and biases
+    for name, param in model.named_parameters():
+        grad_norm = torch.norm(param.grad.data)
+        
+        # Different thresholds for different parameter types
+        if 'weight' in name and 'conv' in name:
+            max_threshold = 2.0  # Higher threshold for conv weights
+            min_threshold = 1e-6
+        elif 'weight' in name and 'fc' in name:
+            max_threshold = 2.0  # Higher threshold for FC weights
+            min_threshold = 1e-6
+        elif 'bias' in name and 'conv' in name:
+            max_threshold = 1.0
+            min_threshold = 1e-8  # Much lower threshold for conv biases
+        elif 'bias' in name:
+            max_threshold = 1.0
+            min_threshold = 1e-7  # Original bias threshold
+        else:  # BatchNorm and other parameters
+            max_threshold = 1.0
+            min_threshold = 1e-6
+            
+        assert grad_norm < max_threshold, f"Exploding gradient in {name}: {grad_norm}"
+        assert grad_norm > min_threshold, f"Vanishing gradient in {name}: {grad_norm}"
+        print(f"Gradient magnitude check passed for {name}: {grad_norm:.6f}")
+
 if __name__ == "__main__":
     pytest.main([__file__])

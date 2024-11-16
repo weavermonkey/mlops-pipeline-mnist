@@ -11,15 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4  # Updated to v4
+    - uses: actions/checkout@v2
     
     - name: Set up Python 3.10
-      uses: actions/setup-python@v5  # Updated to v5
+      uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     
     - name: Cache pip packages
-      uses: actions/cache@v4  # Updated to v4
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
@@ -45,10 +45,11 @@ jobs:
         
         echo "Running gradient tests..."
         pytest test_model.py::test_gradient_flow -v
+        pytest test_model.py::test_gradient_magnitudes -v
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4  # Updated to v4
+      uses: actions/upload-artifact@v2
       with:
         name: test-results
         path: |
