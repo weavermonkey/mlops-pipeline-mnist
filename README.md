@@ -1,5 +1,16 @@
 # MLOps Pipeline MNIST
 
+[![Build Status](https://github.com/weavermonkey/mlops-pipeline-mnist/actions/workflows/test.yml/badge.svg)](https://github.com/weavermonkey/mlops-pipeline-mnist/actions/workflows/test.yml)
+![Python](https://img.shields.io/badge/python-3.10-blue.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0-red.svg)
+![Last Commit](https://img.shields.io/github/last-commit/weavermonkey/mlops-pipeline-mnist)
+![Code Size](https://img.shields.io/github/languages/code-size/weavermonkey/mlops-pipeline-mnist)
+
+### Model Metrics
+![Accuracy](https://img.shields.io/badge/accuracy-95%25-success)
+![Parameters](https://img.shields.io/badge/parameters-<25K-informational)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+
 A lightweight CNN model for MNIST digit classification with MLOps practices.
 
 ## Model Specifications
@@ -17,6 +28,7 @@ The model includes data augmentation to improve robustness. Each image has a 20%
 
 ### Augmentation Examples
 Below are examples of different augmentation techniques applied to MNIST digits:
+
 ![Augmentation Examples](augmentation_samples.png)
 
 Each row shows an original digit followed by three augmentation techniques:
