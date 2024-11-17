@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 class LightweightCNN(nn.Module):
     def __init__(self):
@@ -68,14 +68,52 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     
     return 100 * correct / total
 
-def load_data():
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+class AugmentedMNIST(Dataset):
+    def __init__(self, root='./data', train=True):
+        self.original_dataset = datasets.MNIST(root=root, train=train, download=True)
+        
+        # More subtle augmentation parameters
+        self.augmentation = transforms.Compose([
+            transforms.RandomAffine(
+                degrees=5,  # Reduced rotation range from 10 to 5 degrees
+                translate=(0.05, 0.05),  # Reduced translation from 0.1 to 0.05
+                scale=(0.95, 1.05),  # Reduced scale range from (0.9, 1.1) to (0.95, 1.05)
+                fill=0
+            ),
+            transforms.ToTensor(),
+        ])
+        
+        self.basic_transform = transforms.ToTensor()
+
+    def __getitem__(self, index):
+        img, label = self.original_dataset[index]
+        
+        # Reduced probability from 30% to 20%
+        if torch.rand(1) < 0.2:
+            img = self.augmentation(img)
+        else:
+            img = self.basic_transform(img)
+            
+        return img, label
+
+    def __len__(self):
+        return len(self.original_dataset)
+
+def load_data(use_augmentation=False):
+    """
+    Load MNIST data with optional augmentation
+    Args:
+        use_augmentation (bool): If True, use augmented dataset
+    """
+    if use_augmentation:
+        train_dataset = AugmentedMNIST('./data', train=True)
+    else:
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
     
-    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=1)
-    
     return train_loader
 
 if __name__ == "__main__":
