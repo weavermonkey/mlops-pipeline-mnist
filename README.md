@@ -34,6 +34,7 @@ Input: 28×28×1 grayscale images
 ```
 28×28×1 → [Conv1+BN+ReLU+Pool] → 14×14×12 → [Conv2+BN+ReLU+Pool] → 7×7×16 → [Conv3+BN+ReLU+Pool] → 3×3×20 → [Dropout] → [FC1+ReLU] → 32 → [FC2] → 10
 ```
+
 ## Training Logs
 
 ### Training Configuration
@@ -83,7 +84,6 @@ Input: 28×28×1 grayscale images
 - **Convergence**: Achieved 95.81% accuracy in first epoch
 - **Loss Reduction**: 0.7608 → 0.1367 (82% reduction)
 - **Accuracy Progression**: 78.75% → 95.81% (17% improvement)
-
 
 ## Model Specifications
 
