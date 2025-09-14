@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
+from datetime import datetime
+import pytz
 
 class LightweightCNN(nn.Module):
     def __init__(self):
@@ -48,12 +50,21 @@ class LightweightCNN(nn.Module):
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-def train_epoch(model, train_loader, criterion, optimizer, device):
+def get_ist_time():
+    """Get current time in IST format"""
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S IST')
+
+def train_epoch(model, train_loader, criterion, optimizer, device, epoch=1):
     model.train()
     correct = 0
     total = 0
+    total_loss = 0
+    num_batches = len(train_loader)
     
-    for images, labels in train_loader:
+    print(f"[{get_ist_time()}] Starting Epoch {epoch}")
+    
+    for batch_idx, (images, labels) in enumerate(train_loader):
         images, labels = images.to(device), labels.to(device)
         
         optimizer.zero_grad()
@@ -62,11 +73,24 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
         loss.backward()
         optimizer.step()
         
+        total_loss += loss.item()
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
+        
+        # Log every 100 batches
+        if (batch_idx + 1) % 100 == 0:
+            current_accuracy = 100 * correct / total
+            avg_loss = total_loss / (batch_idx + 1)
+            print(f"[{get_ist_time()}] Epoch {epoch}, Batch {batch_idx + 1}/{num_batches}, "
+                  f"Loss: {avg_loss:.4f}, Accuracy: {current_accuracy:.2f}%")
     
-    return 100 * correct / total
+    final_accuracy = 100 * correct / total
+    avg_loss = total_loss / num_batches
+    print(f"[{get_ist_time()}] Epoch {epoch} completed - "
+          f"Final Loss: {avg_loss:.4f}, Final Accuracy: {final_accuracy:.2f}%")
+    
+    return final_accuracy
 
 class AugmentedMNIST(Dataset):
     def __init__(self, root='./data', train=True):
@@ -117,16 +141,27 @@ def load_data(use_augmentation=False):
     return train_loader
 
 if __name__ == "__main__":
+    print(f"[{get_ist_time()}] Starting MNIST Training")
+    
     device = torch.device("cpu")
     model = LightweightCNN().to(device)
     
     param_count = count_parameters(model)
-    print(f"Total parameters: {param_count}")
+    print(f"[{get_ist_time()}] Model initialized with {param_count:,} parameters")
     
     train_loader = load_data()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.003)
     
+    print(f"[{get_ist_time()}] Training configuration:")
+    print(f"  - Device: {device}")
+    print(f"  - Optimizer: Adam (lr=0.003)")
+    print(f"  - Loss: CrossEntropyLoss")
+    print(f"  - Batch size: 32")
+    print(f"  - Total batches per epoch: {len(train_loader)}")
+    
     torch.manual_seed(42)
-    accuracy = train_epoch(model, train_loader, criterion, optimizer, device)
-    print(f"\nFirst epoch accuracy: {accuracy}%")
+    accuracy = train_epoch(model, train_loader, criterion, optimizer, device, epoch=1)
+    
+    print(f"[{get_ist_time()}] Training completed!")
+    print(f"[{get_ist_time()}] Final first epoch accuracy: {accuracy:.2f}%")
